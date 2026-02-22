@@ -1,10 +1,10 @@
-# Kubernetes Setup for Wiki Server
+# Wiki Server Setup
 
-This repository contains a script to set up a single-node Kubernetes cluster on Fedora Linux for hosting multiple applications, including wiki servers.
+This repository contains scripts to set up a Linux host to support multiple TiddlyWiki instances. Each wiki runs as a systemd service and will automatically restart after host reboots. You can easily add and remove wikis using the provided scripts.
 
 ## Prerequisites
 
-- Fedora Linux 43 (or compatible)
+- Fedora Linux (or compatible)
 - Root or sudo access
 - Internet connection
 
@@ -12,50 +12,75 @@ This repository contains a script to set up a single-node Kubernetes cluster on 
 
 1. Make the setup script executable:
    ```bash
-   chmod +x setup-k8s.sh
+   chmod +x setup.sh
    ```
 
 2. Run the setup script:
    ```bash
-   sudo ./setup-k8s.sh
+   sudo ./setup.sh
    ```
 
 The script will:
 - Update system packages
-- Disable swap
-- Install containerd as the container runtime
-- Install kubelet, kubeadm, and kubectl
-- Initialize a Kubernetes cluster
-- Install Calico as the CNI plugin
-- Allow pods to run on the master node (single-node setup)
-- Install Helm for application management
+- Install Node.js and npm
+- Install TiddlyWiki globally
+- Create /opt/wikis directory for wiki storage
 
-## Post-Setup
+## Adding a Wiki
 
-After running the script, you can:
+To add a new wiki:
 
-- Check cluster status: `kubectl get nodes`
-- Check running pods: `kubectl get pods --all-namespaces`
-- Deploy applications using kubectl or Helm
+1. Make the add script executable:
+   ```bash
+   chmod +x add_wiki.sh
+   ```
 
-## Deploying a Wiki
+2. Run the add script with a unique name and port:
+   ```bash
+   sudo ./add_wiki.sh mywiki 8080
+   ```
 
-To deploy a wiki server (e.g., MediaWiki), you can use Helm charts or create Kubernetes manifests.
+This will:
+- Create a directory for the wiki at /opt/wikis/mywiki
+- Initialize a new TiddlyWiki instance
+- Create and start a systemd service to run the wiki on the specified port
+- Enable the service to start automatically on boot
 
-Example with Helm:
-```bash
-helm repo add bitnami https://charts.bitnami.com/bitnami
-helm install my-wiki bitnami/mediawiki
-```
+## Removing a Wiki
 
-## Troubleshooting
+To remove a wiki:
 
-- If kubeadm init fails, ensure swap is disabled and containerd is running.
-- For network issues, check Calico pods: `kubectl get pods -n kube-system`
-- If kubectl commands fail, ensure your kubeconfig is set: `export KUBECONFIG=$HOME/.kube/config`
+1. Make the remove script executable:
+   ```bash
+   chmod +x remove_wiki.sh
+   ```
 
-## Security Notes
+2. Run the remove script with the wiki name:
+   ```bash
+   sudo ./remove_wiki.sh mywiki
+   ```
 
-- This is a basic single-node setup for development/testing.
-- For production, consider multi-node clusters, RBAC, and security hardening.
-- Expose services carefully, using LoadBalancers or Ingress controllers.
+This will:
+- Stop and disable the systemd service
+- Remove the service file
+- Delete the wiki directory and all its contents
+
+## Accessing Wikis
+
+Once added, wikis are accessible at `http://donkey.local:<port>` from other hosts on the network, where `<port>` is the port you specified when adding the wiki.
+
+## Managing Services
+
+You can manage individual wiki services using standard systemd commands:
+
+- Check status: `sudo systemctl status wiki-<name>`
+- Restart: `sudo systemctl restart wiki-<name>`
+- Stop: `sudo systemctl stop wiki-<name>`
+- Start: `sudo systemctl start wiki-<name>`
+
+## Notes
+
+- Choose unique ports for each wiki (e.g., 8080, 8081, etc.)
+- Wikis are stored in /opt/wikis/
+- Services run as the user who added them
+- All wikis restart automatically after host reboots

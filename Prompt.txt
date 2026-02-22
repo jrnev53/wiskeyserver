@@ -1,0 +1,6 @@
+I want to set up this host to support multiple wikis. 
+I want wikis to restart after the host restarts. 
+I want to be able to add and remove wikis.
+
+Modify the add and remove scripts so that the wiki is visable to other hosts. 
+Use "donkey.local" as the host name.
